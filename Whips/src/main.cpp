@@ -5,7 +5,7 @@
 #include "Led.h"
 #include "LedShow.h"
 #include "DipSwitch.h"
-#include "SdCard.h"
+#include "SDCard.h"
 #include "Gif.h"
 #include "IR.h"
 
@@ -13,10 +13,8 @@ static bool domMode;
 
 void setup()
 {
-
-  pinMode(pinGndMeansDom, INPUT_PULLUP);
-
   Util::setup();
+  dbgprintf("Starting\n");
   delay(100);
 
   if (!(SD.begin(pinSDCardCS)))
@@ -25,6 +23,7 @@ void setup()
     return;
   }
 
+  pinMode(pinGndMeansDom, INPUT_PULLUP);
   domMode = (digitalReadFast(pinGndMeansDom) == LOW);
   dbgprintf("Whip controller in %s mode\n", domMode ? "DOM" : "SUB");
 

@@ -7,6 +7,8 @@ namespace Util
 {
     void setup(void)
     {
+        while (!Serial)
+            ;
     }
 } // namespace Util
 
@@ -23,6 +25,9 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
 {
 
 #ifdef DEBUG_SC
+
+    Serial.print("D{");
+
     char const *pszTmp;
     char rgchTmp[33];
 
@@ -94,5 +99,7 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
 
         pszTmp++;
     }
+
+    Serial.print("}");
 #endif
 }

@@ -17,3 +17,4 @@ Whips-Art/Hex/experiment/.DS_Store
 Whips-Control-PCB/fp-info-cache
 Whips-Control-PCB/production/.DS_Store
 Whips-Control-PCB/Whips-Control-PCB-backups/*
+Whips/monitor/__pycache__/*
