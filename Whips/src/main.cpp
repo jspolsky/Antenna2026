@@ -8,6 +8,7 @@
 #include "SDCard.h"
 #include "Gif.h"
 #include "IR.h"
+#include "Button.h"
 
 static bool domMode;
 
@@ -31,6 +32,7 @@ void setup()
   {
     LedShow::setup();
     IR::setup();
+    Button::setup();
   }
   else
   {
@@ -46,6 +48,7 @@ void loop()
   {
     IR::Op op = IR::loop();
     LedShow::loop(op);
+    Button::loop();
 
     EVERY_N_SECONDS(20)
     {
