@@ -26,13 +26,27 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
 
 #ifdef DEBUG_SC
 
-    Serial.print("D{");
+    static char rgchBuf[256];
+    size_t iBuf = 0;
 
     char const *pszTmp;
     char rgchTmp[33];
 
     va_list argv;
     va_start(argv, pszFmt);
+
+    // Helper lambda to append to buffer safely
+    auto appendStr = [&](const char *s)
+    {
+        while (*s && iBuf < sizeof(rgchBuf) - 1)
+            rgchBuf[iBuf++] = *s++;
+    };
+
+    auto appendChar = [&](char c)
+    {
+        if (iBuf < sizeof(rgchBuf) - 1)
+            rgchBuf[iBuf++] = c;
+    };
 
     pszTmp = pszFmt;
     while (*pszTmp)
@@ -43,45 +57,51 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
             switch (*pszTmp)
             {
             case 'd':
-                Serial.print(va_arg(argv, int));
+                snprintf(rgchTmp, sizeof(rgchTmp), "%d", va_arg(argv, int));
+                appendStr(rgchTmp);
                 break;
 
             case 'x':
             case 'X':
-                Serial.print(va_arg(argv, uint32_t), HEX);
+                snprintf(rgchTmp, sizeof(rgchTmp), "%X", va_arg(argv, uint32_t));
+                appendStr(rgchTmp);
                 break;
 
             case 'b':
                 binaryPrint(rgchTmp, va_arg(argv, uint32_t));
-                Serial.print(rgchTmp);
+                appendStr(rgchTmp);
                 break;
 
             case 'l':
-                Serial.print(va_arg(argv, long));
+                snprintf(rgchTmp, sizeof(rgchTmp), "%ld", va_arg(argv, long));
+                appendStr(rgchTmp);
                 break;
 
             case 'u':
-                Serial.print(va_arg(argv, unsigned long));
+                snprintf(rgchTmp, sizeof(rgchTmp), "%lu", va_arg(argv, unsigned long));
+                appendStr(rgchTmp);
                 break;
 
             case 'f':
-                Serial.print(va_arg(argv, double));
+                snprintf(rgchTmp, sizeof(rgchTmp), "%f", va_arg(argv, double));
+                appendStr(rgchTmp);
                 break;
 
             case 'F':
-                Serial.print(va_arg(argv, double), 8);
+                snprintf(rgchTmp, sizeof(rgchTmp), "%.8f", va_arg(argv, double));
+                appendStr(rgchTmp);
                 break;
 
             case 'c':
-                Serial.print((char)va_arg(argv, int));
+                appendChar((char)va_arg(argv, int));
                 break;
 
             case 's':
-                Serial.print(va_arg(argv, char *));
+                appendStr(va_arg(argv, char *));
                 break;
 
             case '%':
-                Serial.print('%');
+                appendChar('%');
                 break;
 
             default:
@@ -90,16 +110,38 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
         }
         else if (*pszTmp == '\n')
         {
-            Serial.println();
+            appendStr("\r\n");
         }
         else
         {
-            Serial.print(*pszTmp);
+            appendChar(*pszTmp);
         }
 
         pszTmp++;
     }
 
+    va_end(argv);
+
+    rgchBuf[iBuf] = '\0';
+
+    // Send with length prefix: D<length>{<message>}
+    Serial.print("D");
+    Serial.print(iBuf);
+    Serial.print("{");
+    Serial.print(rgchBuf);
     Serial.print("}");
+#endif
+}
+
+void visualize(uint8_t *buf, size_t cb)
+{
+#ifdef VISUALIZER
+
+    Serial.print("V");
+    Serial.print(cb);
+    Serial.print("{");
+    Serial.write(buf, cb);
+    Serial.print("}");
+
 #endif
 }

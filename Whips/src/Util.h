@@ -13,3 +13,4 @@ namespace Util
 } // namespace Util
 
 void dbgprintf(char const *str, ...);
+void visualize(uint8_t *buf, size_t cb);
