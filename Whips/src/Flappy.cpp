@@ -130,6 +130,14 @@ void FlappyGame::update()
 void FlappyGame::updateReady()
 {
     readyFrames++;
+
+    // Timeout after 10 seconds (300 frames at 30fps) - return to GIF mode
+    if (readyFrames > 300)
+    {
+        deactivate();
+        return;
+    }
+
     // Bird bobs up and down gently
     float bobOffset = FLAPPY_READY_BOB_AMPLITUDE *
                       sinf(2.0f * 3.14159f * readyFrames / FLAPPY_READY_BOB_PERIOD);
@@ -324,10 +332,11 @@ void FlappyGame::updateGameOver()
     }
     int scoreWidth = numDigits * 10 + (numDigits - 1) * 8;
 
-    // When score has scrolled completely off left side, return to GIF mode
+    // When score has scrolled completely off left side, go to ready state
+    // (bird bouncing, waiting for next player)
     if (scrollX < -scoreWidth)
     {
-        deactivate();
+        start();  // Goes to READY state, not GIF mode - saves one click for next player
     }
 }
 
