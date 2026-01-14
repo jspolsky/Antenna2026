@@ -15,4 +15,5 @@ namespace LedShow
 {
     void setup();
     void loop(IR::Op op);
+    void onButtonPress();
 }

@@ -151,6 +151,53 @@ class Visualizer(DeviceMonitorFilterBase):
             })
             return ""  # Shown in visualizer window
 
+        elif command == 'f':  # Flappy Bird game state
+            if len(params) >= 19:
+                # Parse the cmdFlappyState structure
+                game_state = ord(params[0])
+                bird_y = ord(params[1]) | (ord(params[2]) << 8)
+                score = ord(params[3]) | (ord(params[4]) << 8)
+
+                # Pipe 1 (int16_t X, uint16_t GapY)
+                pipe1_x = ord(params[5]) | (ord(params[6]) << 8)
+                if pipe1_x >= 0x8000:
+                    pipe1_x -= 0x10000  # Convert to signed
+                pipe1_gap_y = ord(params[7]) | (ord(params[8]) << 8)
+
+                # Pipe 2
+                pipe2_x = ord(params[9]) | (ord(params[10]) << 8)
+                if pipe2_x >= 0x8000:
+                    pipe2_x -= 0x10000
+                pipe2_gap_y = ord(params[11]) | (ord(params[12]) << 8)
+
+                # Pipe 3
+                pipe3_x = ord(params[13]) | (ord(params[14]) << 8)
+                if pipe3_x >= 0x8000:
+                    pipe3_x -= 0x10000
+                pipe3_gap_y = ord(params[15]) | (ord(params[16]) << 8)
+
+                # Scroll X (int16_t)
+                scroll_x = ord(params[17]) | (ord(params[18]) << 8)
+                if scroll_x >= 0x8000:
+                    scroll_x -= 0x10000
+
+                # Send to visualizer
+                self._send_command({
+                    'type': 'flappy_state',
+                    'game_state': game_state,
+                    'bird_y': bird_y,
+                    'score': score,
+                    'pipe1_x': pipe1_x,
+                    'pipe1_gap_y': pipe1_gap_y,
+                    'pipe2_x': pipe2_x,
+                    'pipe2_gap_y': pipe2_gap_y,
+                    'pipe3_x': pipe3_x,
+                    'pipe3_gap_y': pipe3_gap_y,
+                    'scroll_x': scroll_x
+                })
+                return ""  # Shown in visualizer window
+            return f"Visualize: Flappy State (incomplete data)"
+
         else:
             hex_bytes = ' '.join(f'{ord(c):02X}' for c in content)
             return f"Visualize: Unknown '{command}' (Whip: {whip_str}) {hex_bytes}"

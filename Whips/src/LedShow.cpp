@@ -8,6 +8,7 @@
 #include "LedShow.h"
 #include "Commands.h"
 #include "Gif.h"
+#include "Flappy.h"
 
 namespace LedShow
 {
@@ -26,8 +27,12 @@ namespace LedShow
     {
         gif,
         solid,
-        selfID
+        selfID,
+        flappy
     };
+
+    // Moved to namespace scope so onButtonPress can access it
+    static Mode modeCurrent = gif;
 
     void setup()
     {
@@ -45,7 +50,6 @@ namespace LedShow
 
     void loop(IR::Op op)
     {
-        static Mode modeCurrent = gif;
         static int ixGif = 1;
         static CRGB rgbSolid = CRGB::Black;
         static int gifDelay = 40;
@@ -163,6 +167,23 @@ namespace LedShow
                 cmdSelfIdentify p5;
                 SendPacket(&p5, packetSerial);
             }
+            break;
+
+        case flappy:
+            EVERY_N_MILLIS(FLAPPY_FRAME_MS)
+            {
+                flappyGame.update();
+
+                // If game deactivated (returned to attract mode), switch back to gif
+                if (!flappyGame.isActive()) {
+                    modeCurrent = gif;
+                } else {
+                    cmdFlappyState flappyState;
+                    flappyGame.getState(&flappyState);
+                    SendPacket(&flappyState, packetSerial);
+                }
+            }
+            break;
         }
 
         EVERY_N_MILLIS(100)
@@ -178,6 +199,19 @@ namespace LedShow
                     fWriteEEPROM = false;
                 }
             }
+        }
+    }
+
+    void onButtonPress()
+    {
+        // If in GIF mode, start flappy game
+        if (modeCurrent == gif) {
+            modeCurrent = flappy;
+            flappyGame.start();
+        }
+        // If already in flappy mode, pass button press to game
+        else if (modeCurrent == flappy) {
+            flappyGame.onButtonPress();
         }
     }
 

@@ -8,6 +8,8 @@ import pygame
 import socket
 import json
 import os
+import ctypes
+import platform
 from PIL import Image
 
 # Constants for the LED array
@@ -28,6 +30,107 @@ UDP_PORT = 19847
 # Whips-Art is a sibling of Whips, so go up two levels from monitor/
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GIF_DIR = os.path.join(SCRIPT_DIR, '..', '..', 'Whips-Art', 'Hex', 'sdflash')
+
+# Shared library directory
+LIB_DIR = os.path.join(SCRIPT_DIR, 'build')
+
+
+class FlappyRenderer:
+    """Wrapper for the FlappyRender shared library."""
+
+    def __init__(self):
+        self._lib = None
+        self._buffer = None
+        self._load_library()
+
+    def _load_library(self):
+        """Load the shared library."""
+        if platform.system() == 'Darwin':
+            lib_name = 'libFlappyRender.dylib'
+        else:
+            lib_name = 'libFlappyRender.so'
+
+        lib_path = os.path.join(LIB_DIR, lib_name)
+
+        if not os.path.exists(lib_path):
+            print(f"FlappyRender library not found at: {lib_path}")
+            print("Run 'make' in the monitor/ directory to build it.")
+            return
+
+        try:
+            self._lib = ctypes.CDLL(lib_path)
+
+            # Set up the function signature
+            # void renderFlappyState(
+            #     uint8_t gameState, uint16_t birdY, uint16_t score,
+            #     int16_t pipe1X, uint16_t pipe1GapY,
+            #     int16_t pipe2X, uint16_t pipe2GapY,
+            #     int16_t pipe3X, uint16_t pipe3GapY,
+            #     int16_t scrollX, uint8_t* rgbBuffer
+            # );
+            self._lib.renderFlappyState.argtypes = [
+                ctypes.c_uint8,   # gameState
+                ctypes.c_uint16,  # birdY
+                ctypes.c_uint16,  # score
+                ctypes.c_int16,   # pipe1X
+                ctypes.c_uint16,  # pipe1GapY
+                ctypes.c_int16,   # pipe2X
+                ctypes.c_uint16,  # pipe2GapY
+                ctypes.c_int16,   # pipe3X
+                ctypes.c_uint16,  # pipe3GapY
+                ctypes.c_int16,   # scrollX
+                ctypes.POINTER(ctypes.c_uint8)  # rgbBuffer
+            ]
+            self._lib.renderFlappyState.restype = None
+
+            # Pre-allocate the buffer (24 whips * 110 LEDs * 3 bytes per LED)
+            self._buffer = (ctypes.c_uint8 * (NUM_WHIPS * LEDS_PER_WHIP * 3))()
+
+            print("FlappyRender library loaded successfully")
+
+        except Exception as e:
+            print(f"Error loading FlappyRender library: {e}")
+            self._lib = None
+
+    def render(self, game_state, bird_y, score,
+               pipe1_x, pipe1_gap_y, pipe2_x, pipe2_gap_y,
+               pipe3_x, pipe3_gap_y, scroll_x):
+        """Render the game state and return the RGB buffer as nested lists."""
+        if self._lib is None:
+            return None
+
+        # Call the C++ function
+        self._lib.renderFlappyState(
+            ctypes.c_uint8(game_state),
+            ctypes.c_uint16(bird_y),
+            ctypes.c_uint16(score),
+            ctypes.c_int16(pipe1_x),
+            ctypes.c_uint16(pipe1_gap_y),
+            ctypes.c_int16(pipe2_x),
+            ctypes.c_uint16(pipe2_gap_y),
+            ctypes.c_int16(pipe3_x),
+            ctypes.c_uint16(pipe3_gap_y),
+            ctypes.c_int16(scroll_x),
+            self._buffer
+        )
+
+        # Convert buffer to nested lists: [whip][led] = (r, g, b)
+        result = []
+        for whip in range(NUM_WHIPS):
+            whip_leds = []
+            for led in range(LEDS_PER_WHIP):
+                idx = (whip * LEDS_PER_WHIP + led) * 3
+                r = self._buffer[idx]
+                g = self._buffer[idx + 1]
+                b = self._buffer[idx + 2]
+                whip_leds.append((r, g, b))
+            result.append(whip_leds)
+
+        return result
+
+    def is_available(self):
+        """Check if the library is loaded and available."""
+        return self._lib is not None
 
 
 class GifCache:
@@ -113,6 +216,7 @@ def main():
     whip_pixels = [[(0, 0, 0) for _ in range(LEDS_PER_WHIP)] for _ in range(NUM_WHIPS)]
     whip_brightness = [255] * NUM_WHIPS  # Start at full brightness
     gif_cache = GifCache()
+    flappy_renderer = FlappyRenderer()
     running = True
 
     while running:
@@ -171,6 +275,25 @@ def main():
                         elif 0 <= whip < NUM_WHIPS:
                             for led in range(LEDS_PER_WHIP):
                                 whip_pixels[whip][led] = frame_data[whip][led]
+
+                elif cmd.get('type') == 'flappy_state':
+                    if flappy_renderer.is_available():
+                        frame_data = flappy_renderer.render(
+                            cmd['game_state'],
+                            cmd['bird_y'],
+                            cmd['score'],
+                            cmd['pipe1_x'],
+                            cmd['pipe1_gap_y'],
+                            cmd['pipe2_x'],
+                            cmd['pipe2_gap_y'],
+                            cmd['pipe3_x'],
+                            cmd['pipe3_gap_y'],
+                            cmd['scroll_x']
+                        )
+                        if frame_data:
+                            for w in range(NUM_WHIPS):
+                                for led in range(LEDS_PER_WHIP):
+                                    whip_pixels[w][led] = frame_data[w][led]
 
             except BlockingIOError:
                 break

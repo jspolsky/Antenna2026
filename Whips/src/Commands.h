@@ -77,4 +77,39 @@ struct cmdSelfIdentify : cmdUnknown
     }
 };
 
+/* Flappy Bird game state - broadcast to all whips each frame */
+struct cmdFlappyState : cmdUnknown
+{
+    // Game state: 0=ready, 1=playing, 2=gameover
+    static const uint8_t STATE_READY = 0;
+    static const uint8_t STATE_PLAYING = 1;
+    static const uint8_t STATE_GAMEOVER = 2;
+
+    cmdFlappyState() : cmdUnknown('f', 255),  // Always broadcast to all whips
+                       gameState(STATE_READY),
+                       birdY(220),
+                       score(0),
+                       pipe1X(-100), pipe1GapY(0),
+                       pipe2X(-100), pipe2GapY(0),
+                       pipe3X(-100), pipe3GapY(0),
+                       scrollX(96)
+    {
+    }
+
+    uint8_t gameState;    // STATE_READY, STATE_PLAYING, or STATE_GAMEOVER
+    uint16_t birdY;       // Bird vertical position in virtual coords (0-439)
+    uint16_t score;       // Current score
+
+    // Up to 3 pipes. X < 0 means pipe is off-screen left or inactive.
+    // All coordinates in virtual space (96 wide x 440 tall)
+    int16_t pipe1X;       // Pipe 1 X position (left edge), negative = inactive/off-screen
+    uint16_t pipe1GapY;   // Pipe 1 gap center Y position
+    int16_t pipe2X;
+    uint16_t pipe2GapY;
+    int16_t pipe3X;
+    uint16_t pipe3GapY;
+
+    int16_t scrollX;      // Scroll position for gameover score display (virtual pixels)
+};
+
 #pragma pack(pop)

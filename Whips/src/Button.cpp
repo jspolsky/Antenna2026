@@ -4,6 +4,7 @@
 
 #include "Util.h"
 #include "Button.h"
+#include "LedShow.h"
 #include "pins.h"
 
 namespace Button
@@ -14,6 +15,7 @@ namespace Button
     static void handleClick()
     {
         dbgprintf("click!\n");
+        LedShow::onButtonPress();
     }
 
     void setup()
