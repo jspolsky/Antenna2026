@@ -90,6 +90,10 @@ private:
 
     // Ready state animation
     uint16_t readyFrames; // Frames since entering ready state
+
+    // Collision flash effect
+    uint8_t flashWhip = 255;    // Which whip to flash (255 = none)
+    uint8_t flashFrames = 0;    // Frames remaining for flash
 };
 
 // Global game instance

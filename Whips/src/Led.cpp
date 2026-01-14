@@ -171,6 +171,7 @@ namespace Led
                     pFlappy->pipe2X, pFlappy->pipe2GapY,
                     pFlappy->pipe3X, pFlappy->pipe3GapY,
                     pFlappy->scrollX,
+                    pFlappy->flashWhip,
                     rgbBuffer);
 
                 // Copy RGB buffer to FastLED array

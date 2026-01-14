@@ -206,8 +206,22 @@ void renderFlappyColumn(
     int16_t pipe2X, uint16_t pipe2GapY,
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
+    uint8_t flashWhip,
     uint8_t *rgbBuffer)
 {
+    // Check if this whip should flash white
+    if (whipIndex == flashWhip)
+    {
+        for (int led = 0; led < FLAPPY_PHYSICAL_HEIGHT; led++)
+        {
+            int idx = led * 3;
+            rgbBuffer[idx + 0] = 255;
+            rgbBuffer[idx + 1] = 255;
+            rgbBuffer[idx + 2] = 255;
+        }
+        return;
+    }
+
     // This whip covers virtual columns [whipIndex*4, whipIndex*4 + 3]
     int vxStart = whipIndex * FLAPPY_SCALE;
 
@@ -256,6 +270,7 @@ void renderFlappyState(
     int16_t pipe2X, uint16_t pipe2GapY,
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
+    uint8_t flashWhip,
     uint8_t *rgbBuffer)
 {
     for (int whip = 0; whip < FLAPPY_PHYSICAL_WIDTH; whip++)
@@ -266,6 +281,7 @@ void renderFlappyState(
             pipe2X, pipe2GapY,
             pipe3X, pipe3GapY,
             scrollX,
+            flashWhip,
             &rgbBuffer[whip * FLAPPY_PHYSICAL_HEIGHT * 3]);
     }
 }

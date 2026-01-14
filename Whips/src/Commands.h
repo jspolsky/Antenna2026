@@ -95,7 +95,8 @@ struct cmdFlappyState : cmdUnknown
                        pipe1X(-100), pipe1GapY(0),
                        pipe2X(-100), pipe2GapY(0),
                        pipe3X(-100), pipe3GapY(0),
-                       scrollX(96)
+                       scrollX(96),
+                       flashWhip(255)
     {
     }
 
@@ -113,6 +114,8 @@ struct cmdFlappyState : cmdUnknown
     uint16_t pipe3GapY;
 
     int16_t scrollX;      // Scroll position for gameover score display (virtual pixels)
+
+    uint8_t flashWhip;    // Which whip to flash white (255 = none)
 };
 
 #pragma pack(pop)

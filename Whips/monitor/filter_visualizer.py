@@ -152,7 +152,7 @@ class Visualizer(DeviceMonitorFilterBase):
             return ""  # Shown in visualizer window
 
         elif command == 'f':  # Flappy Bird game state
-            if len(params) >= 19:
+            if len(params) >= 20:
                 # Parse the cmdFlappyState structure
                 game_state = ord(params[0])
                 bird_y = ord(params[1]) | (ord(params[2]) << 8)
@@ -181,6 +181,9 @@ class Visualizer(DeviceMonitorFilterBase):
                 if scroll_x >= 0x8000:
                     scroll_x -= 0x10000
 
+                # Flash whip (uint8_t, 255 = none)
+                flash_whip = ord(params[19])
+
                 # Send to visualizer
                 self._send_command({
                     'type': 'flappy_state',
@@ -193,7 +196,8 @@ class Visualizer(DeviceMonitorFilterBase):
                     'pipe2_gap_y': pipe2_gap_y,
                     'pipe3_x': pipe3_x,
                     'pipe3_gap_y': pipe3_gap_y,
-                    'scroll_x': scroll_x
+                    'scroll_x': scroll_x,
+                    'flash_whip': flash_whip
                 })
                 return ""  # Shown in visualizer window
             return f"Visualize: Flappy State (incomplete data)"

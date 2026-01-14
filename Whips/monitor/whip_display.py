@@ -66,7 +66,7 @@ class FlappyRenderer:
             #     int16_t pipe1X, uint16_t pipe1GapY,
             #     int16_t pipe2X, uint16_t pipe2GapY,
             #     int16_t pipe3X, uint16_t pipe3GapY,
-            #     int16_t scrollX, uint8_t* rgbBuffer
+            #     int16_t scrollX, uint8_t flashWhip, uint8_t* rgbBuffer
             # );
             self._lib.renderFlappyState.argtypes = [
                 ctypes.c_uint8,   # gameState
@@ -79,6 +79,7 @@ class FlappyRenderer:
                 ctypes.c_int16,   # pipe3X
                 ctypes.c_uint16,  # pipe3GapY
                 ctypes.c_int16,   # scrollX
+                ctypes.c_uint8,   # flashWhip
                 ctypes.POINTER(ctypes.c_uint8)  # rgbBuffer
             ]
             self._lib.renderFlappyState.restype = None
@@ -94,7 +95,7 @@ class FlappyRenderer:
 
     def render(self, game_state, bird_y, score,
                pipe1_x, pipe1_gap_y, pipe2_x, pipe2_gap_y,
-               pipe3_x, pipe3_gap_y, scroll_x):
+               pipe3_x, pipe3_gap_y, scroll_x, flash_whip=255):
         """Render the game state and return the RGB buffer as nested lists."""
         if self._lib is None:
             return None
@@ -111,6 +112,7 @@ class FlappyRenderer:
             ctypes.c_int16(pipe3_x),
             ctypes.c_uint16(pipe3_gap_y),
             ctypes.c_int16(scroll_x),
+            ctypes.c_uint8(flash_whip),
             self._buffer
         )
 
@@ -288,7 +290,8 @@ def main():
                             cmd['pipe2_gap_y'],
                             cmd['pipe3_x'],
                             cmd['pipe3_gap_y'],
-                            cmd['scroll_x']
+                            cmd['scroll_x'],
+                            cmd.get('flash_whip', 255)
                         )
                         if frame_data:
                             for w in range(NUM_WHIPS):

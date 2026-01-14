@@ -61,6 +61,7 @@ extern "C" {
  * @param pipe3X     Pipe 3 X position
  * @param pipe3GapY  Pipe 3 gap center Y
  * @param scrollX    Scroll position for gameover score display (virtual pixels)
+ * @param flashWhip  Which whip to flash white (255 = none)
  * @param rgbBuffer  Output buffer, 24*110*3 bytes (row-major: [whip][led][rgb])
  */
 void renderFlappyState(
@@ -71,6 +72,7 @@ void renderFlappyState(
     int16_t pipe2X, uint16_t pipe2GapY,
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
+    uint8_t flashWhip,
     uint8_t* rgbBuffer
 );
 
@@ -89,6 +91,7 @@ void renderFlappyState(
  * @param pipe3X     Pipe 3 X position
  * @param pipe3GapY  Pipe 3 gap center Y
  * @param scrollX    Scroll position for gameover score display
+ * @param flashWhip  Which whip to flash white (255 = none)
  * @param rgbBuffer  Output buffer, 110*3 bytes for this whip
  */
 void renderFlappyColumn(
@@ -100,6 +103,7 @@ void renderFlappyColumn(
     int16_t pipe2X, uint16_t pipe2GapY,
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
+    uint8_t flashWhip,
     uint8_t* rgbBuffer
 );
 

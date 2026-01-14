@@ -30,6 +30,8 @@ void FlappyGame::deactivate()
     pipe1Scored = pipe2Scored = pipe3Scored = false;
     gameOverFrames = 0;
     readyFrames = 0;
+    flashWhip = 255;
+    flashFrames = 0;
 }
 
 void FlappyGame::start()
@@ -55,6 +57,8 @@ void FlappyGame::resetGame()
 
     pipe1Scored = pipe2Scored = pipe3Scored = false;
     gameOverFrames = 0;
+    flashWhip = 255;
+    flashFrames = 0;
 }
 
 void FlappyGame::onButtonPress()
@@ -119,6 +123,9 @@ void FlappyGame::update()
             gameState = STATE_DYING;
             // Give bird a slight upward bump then let gravity take over
             birdVelocity = FLAPPY_FLAP_VELOCITY / 2;
+            // Flash the whip where the bird is
+            flashWhip = FLAPPY_BIRD_X / FLAPPY_SCALE;
+            flashFrames = 5;
         }
         break;
 
@@ -151,6 +158,16 @@ void FlappyGame::updateReady()
 
 void FlappyGame::updateDying()
 {
+    // Decrement flash counter
+    if (flashFrames > 0)
+    {
+        flashFrames--;
+        if (flashFrames == 0)
+        {
+            flashWhip = 255;  // Turn off flash
+        }
+    }
+
     // Bird falls with gravity (pipes are frozen)
     birdVelocity -= FLAPPY_GRAVITY;
 
@@ -382,4 +399,5 @@ void FlappyGame::getState(cmdFlappyState *state) const
     state->pipe3X = pipeX[2];
     state->pipe3GapY = pipeGapY[2];
     state->scrollX = scrollX;
+    state->flashWhip = flashWhip;
 }
