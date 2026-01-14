@@ -29,7 +29,7 @@ namespace Gif
     // sets *piDelay to the delay speed to use
     bool GetGifInfo(uint16_t ixGifNumber, int &iDelay)
     {
-        char rgchFileName[10];
+        char rgchFileName[12];  // "/65535.gif" + null = 11 chars max
         sprintf(rgchFileName, "/%03d.gif", ixGifNumber);
 
         uint32_t timeStart = millis();
@@ -63,7 +63,7 @@ namespace Gif
 
     void LoadGif(uint16_t ixGifNumber)
     {
-        char rgchFileName[10];
+        char rgchFileName[12];  // "/65535.gif" + null = 11 chars max
         sprintf(rgchFileName, "/%03d.gif", ixGifNumber);
 
         uint32_t timeStart = millis();

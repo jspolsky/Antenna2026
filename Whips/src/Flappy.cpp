@@ -204,13 +204,11 @@ void FlappyGame::updatePipes()
 
     // Find the rightmost active pipe
     int16_t rightmostX = -1000;
-    int rightmostPipe = -1;
     for (int i = 0; i < 3; i++)
     {
         if (pipeX[i] > rightmostX)
         {
             rightmostX = pipeX[i];
-            rightmostPipe = i;
         }
     }
 

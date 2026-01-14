@@ -63,7 +63,7 @@ void dbgprintf(char const *pszFmt UNUSED_IN_RELEASE, ...)
 
             case 'x':
             case 'X':
-                snprintf(rgchTmp, sizeof(rgchTmp), "%X", va_arg(argv, uint32_t));
+                snprintf(rgchTmp, sizeof(rgchTmp), "%lX", va_arg(argv, uint32_t));
                 appendStr(rgchTmp);
                 break;
 

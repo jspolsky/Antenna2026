@@ -1,6 +1,9 @@
 #pragma once
 
 #include <PacketSerial.h>
+#include <CRC16.h>
+#include <CRC.h>
+#include "Util.h"
 
 //
 // a bunch of data structures sent over the serial wire
