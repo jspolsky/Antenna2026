@@ -1,5 +1,16 @@
 from platformio.public import DeviceMonitorFilterBase
 import re
+import subprocess
+import socket
+import json
+import os
+
+# Constants for the LED array
+NUM_WHIPS = 24
+
+# Communication
+UDP_PORT = 19847
+
 
 class Visualizer(DeviceMonitorFilterBase):
     NAME = "visualizer"
@@ -7,7 +18,34 @@ class Visualizer(DeviceMonitorFilterBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._buffer = ""
+        self._sock = None
+        self._display_process = None
+        self._start_display()
         print("Visualizer filter is loaded")
+
+    def _start_display(self):
+        """Start the display in a separate process."""
+        # Get the path to whip_display.py (same directory as this file)
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        display_script = os.path.join(this_dir, 'whip_display.py')
+
+        # Launch the display as a separate process
+        self._display_process = subprocess.Popen(
+            ['python3', display_script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        # Set up UDP socket for sending commands
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def _send_command(self, cmd):
+        """Send a command to the display via UDP."""
+        try:
+            data = json.dumps(cmd).encode('utf-8')
+            self._sock.sendto(data, ('127.0.0.1', UDP_PORT))
+        except Exception as e:
+            print(f"Error sending command: {e}")
 
     def rx(self, text):
         self._buffer += text
@@ -39,7 +77,9 @@ class Visualizer(DeviceMonitorFilterBase):
             if msg_type == 'D':
                 result.append(f"Debug: {content.rstrip()}")
             else:  # msg_type == 'V'
-                result.append(self.visualize(content))
+                viz_result = self.visualize(content)
+                if viz_result:  # Skip empty strings
+                    result.append(viz_result)
 
             # Remove processed message from buffer (content + closing '}')
             self._buffer = self._buffer[content_start + length + 1:]
@@ -64,7 +104,15 @@ class Visualizer(DeviceMonitorFilterBase):
         if command == 'c':  # Set Whip Color - CRGB (3 bytes: R, G, B)
             if len(params) >= 3:
                 r, g, b = ord(params[0]), ord(params[1]), ord(params[2])
-                return f"Visualize: Set Whip Color (Whip: {whip_str}, RGB: {r},{g},{b})"
+                # Update the graphical display
+                self._send_command({
+                    'type': 'set_whip_color',
+                    'whip': whip,
+                    'r': r,
+                    'g': g,
+                    'b': b
+                })
+                return ""  # Shown in visualizer window
             return f"Visualize: Set Whip Color (Whip: {whip_str}, RGB: ?)"
 
         elif command == 'g':  # Show GIF Frame - uint32_t frame, uint16_t iGifNumber
@@ -77,7 +125,13 @@ class Visualizer(DeviceMonitorFilterBase):
         elif command == 'b':  # Set Brightness - uint8_t brightness
             if len(params) >= 1:
                 brightness = ord(params[0])
-                return f"Visualize: Set Brightness (Whip: {whip_str}, Brightness: {brightness})"
+                # Update the graphical display
+                self._send_command({
+                    'type': 'set_brightness',
+                    'whip': whip,
+                    'brightness': brightness
+                })
+                return ""  # Shown in visualizer window
             return f"Visualize: Set Brightness (Whip: {whip_str}, Brightness: ?)"
 
         elif command == 'i':  # Self Identify - no extra params
@@ -88,5 +142,4 @@ class Visualizer(DeviceMonitorFilterBase):
             return f"Visualize: Unknown '{command}' (Whip: {whip_str}) {hex_bytes}"
 
     def tx(self, text):
-        print(f"Sent: {text}\n")
         return text
