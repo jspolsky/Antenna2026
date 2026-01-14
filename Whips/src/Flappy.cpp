@@ -116,9 +116,14 @@ void FlappyGame::update()
         if (checkCollision())
         {
             dbgprintf("Collision detected!\n");
-            gameState = STATE_GAMEOVER;
-            gameOverFrames = 0;
+            gameState = STATE_DYING;
+            // Give bird a slight upward bump then let gravity take over
+            birdVelocity = FLAPPY_FLAP_VELOCITY / 2;
         }
+        break;
+
+    case STATE_DYING:
+        updateDying();
         break;
 
     case STATE_GAMEOVER:
@@ -142,6 +147,30 @@ void FlappyGame::updateReady()
     float bobOffset = FLAPPY_READY_BOB_AMPLITUDE *
                       sinf(2.0f * 3.14159f * readyFrames / FLAPPY_READY_BOB_PERIOD);
     birdY = (FLAPPY_VIRTUAL_HEIGHT / 2) + bobOffset;
+}
+
+void FlappyGame::updateDying()
+{
+    // Bird falls with gravity (pipes are frozen)
+    birdVelocity -= FLAPPY_GRAVITY;
+
+    // Clamp fall speed
+    if (birdVelocity < -FLAPPY_MAX_FALL_SPEED)
+    {
+        birdVelocity = -FLAPPY_MAX_FALL_SPEED;
+    }
+
+    // Update position
+    birdY += birdVelocity;
+
+    // When bird hits the ground, transition to game over (score display)
+    if (birdY <= FLAPPY_GROUND_HEIGHT + FLAPPY_BIRD_HEIGHT / 2)
+    {
+        birdY = FLAPPY_GROUND_HEIGHT + FLAPPY_BIRD_HEIGHT / 2;
+        gameState = STATE_GAMEOVER;
+        gameOverFrames = 0;
+        scrollX = FLAPPY_VIRTUAL_WIDTH;  // Reset scroll position for score
+    }
 }
 
 void FlappyGame::updateBird()

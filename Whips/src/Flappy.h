@@ -53,6 +53,7 @@ public:
     static const uint8_t STATE_INACTIVE = 255;  // GIF/attract mode
     static const uint8_t STATE_READY = 0;
     static const uint8_t STATE_PLAYING = 1;
+    static const uint8_t STATE_DYING = 3;       // Bird falling after collision
     static const uint8_t STATE_GAMEOVER = 2;
 
 private:
@@ -62,6 +63,7 @@ private:
     void updatePipes();
     void updateBird();
     void updateScore();
+    void updateDying();
     void updateGameOver();
     void updateReady();
 
