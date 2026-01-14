@@ -1,4 +1,5 @@
 **/.DS_Store
+**/CLAUDE.md
 .gitignore
 Whips-PCB/Whips-PCB-backups/*
 Whips-PCB/fp-info-cache
