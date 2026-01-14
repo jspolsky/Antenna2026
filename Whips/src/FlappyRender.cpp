@@ -175,7 +175,16 @@ static void getVirtualPixelColor(
         return;
     }
 
-    // Pipes (check all 3)
+    // Bird (always in front)
+    if (isBirdPixel(vx, vy, birdY))
+    {
+        *r = FLAPPY_COLOR_BIRD_R;
+        *g = FLAPPY_COLOR_BIRD_G;
+        *b = FLAPPY_COLOR_BIRD_B;
+        return;
+    }
+
+    // Pipes (behind bird)
     if (isPipePixel(vx, vy, pipe1X, pipe1GapY) ||
         isPipePixel(vx, vy, pipe2X, pipe2GapY) ||
         isPipePixel(vx, vy, pipe3X, pipe3GapY))
@@ -183,15 +192,6 @@ static void getVirtualPixelColor(
         *r = FLAPPY_COLOR_PIPE_R;
         *g = FLAPPY_COLOR_PIPE_G;
         *b = FLAPPY_COLOR_PIPE_B;
-        return;
-    }
-
-    // Bird (drawn on top of pipes if overlapping)
-    if (isBirdPixel(vx, vy, birdY))
-    {
-        *r = FLAPPY_COLOR_BIRD_R;
-        *g = FLAPPY_COLOR_BIRD_G;
-        *b = FLAPPY_COLOR_BIRD_B;
         return;
     }
 }
