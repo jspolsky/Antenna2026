@@ -135,7 +135,12 @@ class Visualizer(DeviceMonitorFilterBase):
             return f"Visualize: Set Brightness (Whip: {whip_str}, Brightness: ?)"
 
         elif command == 'i':  # Self Identify - no extra params
-            return f"Visualize: Self Identify (Whip: {whip_str})"
+            # Update the graphical display
+            self._send_command({
+                'type': 'self_identify',
+                'whip': whip
+            })
+            return ""  # Shown in visualizer window
 
         else:
             hex_bytes = ' '.join(f'{ord(c):02X}' for c in content)
