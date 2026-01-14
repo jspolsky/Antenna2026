@@ -30,10 +30,12 @@ class Visualizer(DeviceMonitorFilterBase):
         display_script = os.path.join(this_dir, 'whip_display.py')
 
         # Launch the display as a separate process
+        # Use the same Python that's running this script to ensure dependencies are available
+        import sys
         self._display_process = subprocess.Popen(
-            ['python3', display_script],
+            [sys.executable, display_script],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=None  # Show errors in terminal
         )
 
         # Set up UDP socket for sending commands
@@ -119,7 +121,14 @@ class Visualizer(DeviceMonitorFilterBase):
             if len(params) >= 6:
                 frame = ord(params[0]) | (ord(params[1]) << 8) | (ord(params[2]) << 16) | (ord(params[3]) << 24)
                 gif_num = ord(params[4]) | (ord(params[5]) << 8)
-                return f"Visualize: Show GIF Frame (Whip: {whip_str}, Frame: {frame}, GIF: {gif_num})"
+                # Update the graphical display
+                self._send_command({
+                    'type': 'show_gif_frame',
+                    'whip': whip,
+                    'frame': frame,
+                    'gif_number': gif_num
+                })
+                return ""  # Shown in visualizer window
             return f"Visualize: Show GIF Frame (Whip: {whip_str}, Frame: ?)"
 
         elif command == 'b':  # Set Brightness - uint8_t brightness

@@ -15,8 +15,7 @@ void SendPacket(T *cmd, PacketSerial &packetSerial)
     cmd->checksum = 0;
     cmd->checksum = calcCRC16((uint8_t *)cmd, sizeof(T));
     packetSerial.send((uint8_t *)cmd, sizeof(T));
-    if (cmd->chCommand != 'g')
-        visualize((uint8_t *)cmd, sizeof(T));
+    visualize((uint8_t *)cmd, sizeof(T));
 }
 
 // minimize byte size to maximize the throughput

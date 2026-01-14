@@ -7,20 +7,88 @@ Communicates via UDP socket on localhost.
 import pygame
 import socket
 import json
+import os
+from PIL import Image
 
 # Constants for the LED array
 NUM_WHIPS = 24
-LEDS_PER_WHIP = 120
+LEDS_PER_WHIP = 110  # Matches NUM_LEDS in platformio.ini
 
 # Display scaling
 PIXELS_PER_LED = 2  # Each LED is 2 pixels tall
-STRIP_HEIGHT = LEDS_PER_WHIP * PIXELS_PER_LED  # 240 pixels
+STRIP_HEIGHT = LEDS_PER_WHIP * PIXELS_PER_LED  # 220 pixels
 STRIP_WIDTH = 5
 STRIP_SPACING = 57  # Adjusted to make window ~2x wider
 MARGIN = 20
 
 # Communication
 UDP_PORT = 19847
+
+# GIF directory (relative to this script)
+# Whips-Art is a sibling of Whips, so go up two levels from monitor/
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+GIF_DIR = os.path.join(SCRIPT_DIR, '..', '..', 'Whips-Art', 'Hex', 'sdflash')
+
+
+class GifCache:
+    """Cache for loaded and decoded GIF frames."""
+
+    def __init__(self):
+        self._cache = {}  # gif_number -> list of frames, each frame is [whip][led] = (r,g,b)
+
+    def get_frame(self, gif_number, frame_index):
+        """Get a specific frame from a GIF, loading if necessary."""
+        if gif_number not in self._cache:
+            self._load_gif(gif_number)
+
+        if gif_number not in self._cache:
+            return None  # Failed to load
+
+        frames = self._cache[gif_number]
+        if not frames:
+            return None
+
+        # Mod frame index by number of frames (like the C++ code does)
+        return frames[frame_index % len(frames)]
+
+    def _load_gif(self, gif_number):
+        """Load and decode a GIF file."""
+        filename = os.path.join(GIF_DIR, f'{gif_number:03d}.gif')
+
+        if not os.path.exists(filename):
+            print(f"GIF file not found: {filename}")
+            self._cache[gif_number] = []
+            return
+
+        try:
+            img = Image.open(filename)
+            frames = []
+
+            for frame_idx in range(img.n_frames):
+                img.seek(frame_idx)
+                # Convert to RGB (GIFs might be palette-based)
+                rgb_frame = img.convert('RGB')
+
+                # Extract pixel data: frame_data[whip][led] = (r, g, b)
+                frame_data = []
+                for whip in range(NUM_WHIPS):
+                    whip_leds = []
+                    for led in range(LEDS_PER_WHIP):
+                        if led < rgb_frame.width and whip < rgb_frame.height:
+                            pixel = rgb_frame.getpixel((led, whip))
+                            whip_leds.append(pixel)
+                        else:
+                            whip_leds.append((0, 0, 0))
+                    frame_data.append(whip_leds)
+
+                frames.append(frame_data)
+
+            self._cache[gif_number] = frames
+            print(f"Loaded GIF {gif_number}: {len(frames)} frames")
+
+        except Exception as e:
+            print(f"Error loading GIF {gif_number}: {e}")
+            self._cache[gif_number] = []
 
 
 def main():
@@ -44,6 +112,7 @@ def main():
     # Per-pixel colors for each whip: whip_pixels[whip][led] = (r, g, b)
     whip_pixels = [[(0, 0, 0) for _ in range(LEDS_PER_WHIP)] for _ in range(NUM_WHIPS)]
     whip_brightness = [255] * NUM_WHIPS  # Start at full brightness
+    gif_cache = GifCache()
     running = True
 
     while running:
@@ -87,6 +156,21 @@ def main():
                             set_identify_pattern(whip_pixels, w)
                     elif 0 <= whip < NUM_WHIPS:
                         set_identify_pattern(whip_pixels, whip)
+
+                elif cmd.get('type') == 'show_gif_frame':
+                    gif_number = cmd['gif_number']
+                    frame = cmd['frame']
+                    whip = cmd['whip']
+
+                    frame_data = gif_cache.get_frame(gif_number, frame)
+                    if frame_data:
+                        if whip == 255:  # ALL whips
+                            for w in range(NUM_WHIPS):
+                                for led in range(LEDS_PER_WHIP):
+                                    whip_pixels[w][led] = frame_data[w][led]
+                        elif 0 <= whip < NUM_WHIPS:
+                            for led in range(LEDS_PER_WHIP):
+                                whip_pixels[whip][led] = frame_data[whip][led]
 
             except BlockingIOError:
                 break
@@ -138,12 +222,12 @@ def set_identify_pattern(whip_pixels, whip_index):
         bit_set = whip_num & 0x01
 
         # LEDs 0-16 of segment: White if bit set, Black otherwise
-        for led in range(segment * 20, (segment + 1) * 20 - 3):
+        for led in range(segment * 20, min((segment + 1) * 20 - 3, LEDS_PER_WHIP)):
             if bit_set:
                 whip_pixels[whip_index][led] = (255, 255, 255)  # White
 
         # LEDs 17-19 of segment: Red separator
-        for led in range((segment + 1) * 20 - 3, (segment + 1) * 20):
+        for led in range((segment + 1) * 20 - 3, min((segment + 1) * 20, LEDS_PER_WHIP)):
             whip_pixels[whip_index][led] = (255, 0, 0)  # Red
 
         whip_num >>= 1
