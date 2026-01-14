@@ -358,6 +358,16 @@ bool FlappyGame::checkCollision() const
 
 void FlappyGame::updateGameOver()
 {
+    // Continue decrementing flash counter if still active
+    if (flashFrames > 0)
+    {
+        flashFrames--;
+        if (flashFrames == 0)
+        {
+            flashWhip = 255;  // Turn off flash
+        }
+    }
+
     gameOverFrames++;
 
     // Scroll the score across the screen (every 3rd frame for slower scroll)
