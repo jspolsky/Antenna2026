@@ -18,6 +18,7 @@
 #define FLAPPY_BIRD_HEIGHT 12
 #define FLAPPY_BIRD_X 16          // Fixed horizontal position
 #define FLAPPY_PIPE_WIDTH 8
+#define FLAPPY_PIPE_HITBOX_MARGIN 2  // Shrink pipe collision hitbox by this much on each side
 #define FLAPPY_GAP_SIZE 88        // Gap height in virtual pixels
 #define FLAPPY_GROUND_HEIGHT 12
 

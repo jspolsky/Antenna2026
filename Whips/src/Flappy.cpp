@@ -317,8 +317,9 @@ bool FlappyGame::checkCollision() const
         if (pipeX[i] <= -FLAPPY_PIPE_WIDTH)
             continue; // Inactive pipe
 
-        int pipeLeft = pipeX[i];
-        int pipeRight = pipeX[i] + FLAPPY_PIPE_WIDTH;
+        // Shrink hitbox slightly to account for antialiased edges
+        int pipeLeft = pipeX[i] + FLAPPY_PIPE_HITBOX_MARGIN;
+        int pipeRight = pipeX[i] + FLAPPY_PIPE_WIDTH - FLAPPY_PIPE_HITBOX_MARGIN;
 
         // Check horizontal overlap
         if (birdRight > pipeLeft && birdLeft < pipeRight)
