@@ -9,6 +9,7 @@
 #include "Commands.h"
 #include "DipSwitch.h"
 #include "Gif.h"
+#include "FlappyRender.h"
 
 namespace Led
 {
@@ -146,6 +147,42 @@ namespace Led
             }
 
             FastLED.show();
+            break;
+        }
+
+        case 'f':
+        {
+            // Flappy Bird game state - render this whip's column
+            cmdFlappyState *pFlappy = (cmdFlappyState *)buffer;
+            uint8_t whipNum = DipSwitch::getWhipNumber();
+
+            if (whipNum < FLAPPY_PHYSICAL_WIDTH)
+            {
+                // Buffer for RGB data (110 LEDs * 3 bytes)
+                uint8_t rgbBuffer[FLAPPY_PHYSICAL_HEIGHT * 3];
+
+                // Render just this whip's column
+                renderFlappyColumn(
+                    whipNum,
+                    pFlappy->gameState,
+                    pFlappy->birdY,
+                    pFlappy->score,
+                    pFlappy->pipe1X, pFlappy->pipe1GapY,
+                    pFlappy->pipe2X, pFlappy->pipe2GapY,
+                    pFlappy->pipe3X, pFlappy->pipe3GapY,
+                    pFlappy->scrollX,
+                    rgbBuffer);
+
+                // Copy RGB buffer to FastLED array
+                for (int i = 0; i < FLAPPY_PHYSICAL_HEIGHT; i++)
+                {
+                    leds[i].r = rgbBuffer[i * 3];
+                    leds[i].g = rgbBuffer[i * 3 + 1];
+                    leds[i].b = rgbBuffer[i * 3 + 2];
+                }
+
+                FastLED.show();
+            }
             break;
         }
         }
