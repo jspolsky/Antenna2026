@@ -7,7 +7,7 @@ namespace Util
 {
     void setup(void)
     {
-        while (!Serial)
+        while (!Serial && millis() < 1000)
             ;
     }
 } // namespace Util

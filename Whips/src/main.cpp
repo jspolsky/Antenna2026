@@ -15,6 +15,8 @@ static bool domMode;
 void setup()
 {
   Util::setup();
+  pinMode(pinGndMeansDom, INPUT_PULLUP); // this takes a millisecond to pull up the pin; it MUST be before the delay() before you can start reading the pin
+
   dbgprintf("Starting\n");
   delay(100);
 
@@ -24,7 +26,6 @@ void setup()
     return;
   }
 
-  pinMode(pinGndMeansDom, INPUT_PULLUP);
   domMode = (digitalReadFast(pinGndMeansDom) == LOW);
   dbgprintf("Whip controller in %s mode\n", domMode ? "DOM" : "SUB");
 

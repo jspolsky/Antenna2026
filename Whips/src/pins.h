@@ -21,4 +21,6 @@
 #define pinGndMeansDom 10
 #define pinIR 11
 
-#define pinButton 13
+#define pinButton 14
+#define pinReservedA 18 /* exposed on controller PCB for future use */
+#define pinReservedB 19 /* exposed on controller PCB for future use */
