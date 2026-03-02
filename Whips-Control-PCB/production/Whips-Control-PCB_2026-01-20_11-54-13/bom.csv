@@ -1,0 +1,5 @@
+﻿Designator,Footprint,Quantity,Value,LCSC Part #
+"J1, J4","TerminalBlock_Phoenix_MKDS-1,5-4_1x04_P5.00mm_Horizontal",2,Conn_01x04_Pin,
+MAX485,Max485-Module,1,MAX485E,
+TEENSY 4.1,Teensy41_Minimal,1,Teensy4.1_Minimal,
+U3,Vishay_MOLD-3Pin,1,TSOP341xx,
