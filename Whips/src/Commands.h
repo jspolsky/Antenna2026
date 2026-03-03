@@ -81,6 +81,22 @@ struct cmdSelfIdentify : cmdUnknown
     }
 };
 
+/* Set the visible LED range for the Flappy game */
+struct cmdSetGameRange : cmdUnknown
+{
+    cmdSetGameRange(uint8_t bottomLED, uint8_t topLED, uint8_t flashRange = 0)
+        : cmdUnknown('r', 255),
+          bottomLED(bottomLED),
+          topLED(topLED),
+          flashRange(flashRange)
+    {
+    }
+
+    uint8_t bottomLED;  // First visible LED (default 0)
+    uint8_t topLED;     // Last visible LED (default 109)
+    uint8_t flashRange; // Nonzero: flash boundary LEDs white
+};
+
 /* Flappy Bird game state - broadcast to all whips each frame */
 struct cmdFlappyState : cmdUnknown
 {

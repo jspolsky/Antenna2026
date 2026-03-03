@@ -17,6 +17,19 @@ namespace Led
     CRGB leds[NUM_LEDS];
     PacketSerial packetSerial;
     uint8_t brightness = 32;
+    uint8_t bottomLED = 0;
+    uint8_t topLED = NUM_LEDS - 1;
+    bool rangeFlashing = false;
+
+    // Overlay boundary LEDs white when range flash is active
+    void applyRangeFlash()
+    {
+        if (rangeFlashing)
+        {
+            leds[bottomLED] = CRGB::White;
+            leds[topLED] = CRGB::White;
+        }
+    }
 
     void setup()
     {
@@ -74,7 +87,9 @@ namespace Led
         case 'c':
         {
             cmdSetWhipColor *pSetWhipColor = (cmdSetWhipColor *)buffer;
-            FastLED.showColor(pSetWhipColor->rgb);
+            fill_solid(leds, NUM_LEDS, pSetWhipColor->rgb);
+            applyRangeFlash();
+            FastLED.show();
         }
         break;
 
@@ -116,6 +131,7 @@ namespace Led
                     dbgprintf("Loading gif number %d\n", pShowGIFFrame->iGifNumber);
                 }
                 Gif::GetFrame(pShowGIFFrame->frame, leds);
+                applyRangeFlash();
                 FastLED.show();
             }
             else
@@ -150,6 +166,15 @@ namespace Led
             break;
         }
 
+        case 'r':
+        {
+            cmdSetGameRange *pRange = (cmdSetGameRange *)buffer;
+            bottomLED = pRange->bottomLED;
+            topLED = pRange->topLED;
+            rangeFlashing = (pRange->flashRange > 0);
+            break;
+        }
+
         case 'f':
         {
             // Flappy Bird game state - render this whip's column
@@ -172,6 +197,8 @@ namespace Led
                     pFlappy->pipe3X, pFlappy->pipe3GapY,
                     pFlappy->scrollX,
                     pFlappy->flashWhip,
+                    bottomLED,
+                    topLED,
                     rgbBuffer);
 
                 // Copy RGB buffer to FastLED array
@@ -182,6 +209,7 @@ namespace Led
                     leds[i].b = rgbBuffer[i * 3 + 2];
                 }
 
+                applyRangeFlash();
                 FastLED.show();
             }
             break;

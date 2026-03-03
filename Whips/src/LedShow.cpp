@@ -21,6 +21,10 @@ namespace LedShow
     uint8_t ixBrightness = 0;
     bool fWriteEEPROM = false;
 
+    uint8_t bottomLED = 0;
+    uint8_t topLED = 109;
+    uint8_t rangeFlashTimer = 0; // Counts down; when nonzero, SUBs flash boundary LEDs
+
     PacketSerial packetSerial;
 
     enum Mode
@@ -45,6 +49,21 @@ namespace LedShow
             ixBrightness = 19;
             EEPROM.write(0, ixBrightness);
         }
+
+        bottomLED = EEPROM.read(1);
+        topLED = EEPROM.read(2);
+        // Fresh EEPROM reads 0xFF - reset to defaults
+        if (bottomLED == 0xFF)
+            bottomLED = 0;
+        if (topLED == 0xFF || topLED >= NUM_LEDS)
+            topLED = NUM_LEDS - 1;
+        if (topLED - bottomLED + 1 < 30)
+        {
+            bottomLED = 0;
+            topLED = NUM_LEDS - 1;
+        }
+        dbgprintf("LED range: %d - %d\n", bottomLED, topLED);
+
         dbgprintf("...done\n");
     }
 
@@ -134,6 +153,50 @@ namespace LedShow
             dbgprintf("brightness %d\n", ixBrightness);
             break;
 
+        case IR::bottomUp:
+            if (bottomLED < topLED - 29) // Enforce minimum 30 LEDs
+            {
+                bottomLED++;
+                fWriteEEPROM = true;
+                flappyGame.setLEDRange(bottomLED, topLED);
+            }
+            rangeFlashTimer = 5;
+            dbgprintf("LED range: %d - %d\n", bottomLED, topLED);
+            break;
+
+        case IR::bottomDown:
+            if (bottomLED > 0)
+            {
+                bottomLED--;
+                fWriteEEPROM = true;
+                flappyGame.setLEDRange(bottomLED, topLED);
+            }
+            rangeFlashTimer = 5;
+            dbgprintf("LED range: %d - %d\n", bottomLED, topLED);
+            break;
+
+        case IR::topUp:
+            if (topLED < NUM_LEDS - 1)
+            {
+                topLED++;
+                fWriteEEPROM = true;
+                flappyGame.setLEDRange(bottomLED, topLED);
+            }
+            rangeFlashTimer = 5;
+            dbgprintf("LED range: %d - %d\n", bottomLED, topLED);
+            break;
+
+        case IR::topDown:
+            if (topLED > bottomLED + 29) // Enforce minimum 30 LEDs
+            {
+                topLED--;
+                fWriteEEPROM = true;
+                flappyGame.setLEDRange(bottomLED, topLED);
+            }
+            rangeFlashTimer = 5;
+            dbgprintf("LED range: %d - %d\n", bottomLED, topLED);
+            break;
+
         default:
             break;
         }
@@ -192,12 +255,19 @@ namespace LedShow
             {
                 cmdSetBrightness p2(255, rgBrightness[ixBrightness]);
                 SendPacket(&p2, packetSerial);
+            }
 
-                if (fWriteEEPROM)
-                {
-                    EEPROM.write(0, ixBrightness);
-                    fWriteEEPROM = false;
-                }
+            cmdSetGameRange rangeCmd(bottomLED, topLED, rangeFlashTimer);
+            SendPacket(&rangeCmd, packetSerial);
+            if (rangeFlashTimer > 0)
+                rangeFlashTimer--;
+
+            if (fWriteEEPROM)
+            {
+                EEPROM.write(0, ixBrightness);
+                EEPROM.write(1, bottomLED);
+                EEPROM.write(2, topLED);
+                fWriteEEPROM = false;
             }
         }
     }
@@ -207,6 +277,7 @@ namespace LedShow
         // If in GIF mode, start flappy game
         if (modeCurrent == gif) {
             modeCurrent = flappy;
+            flappyGame.setLEDRange(bottomLED, topLED);
             flappyGame.start();
         }
         // If already in flappy mode, pass button press to game

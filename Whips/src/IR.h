@@ -22,6 +22,10 @@ namespace IR
         flash,
         brighter,
         dimmer,
+        bottomUp,
+        bottomDown,
+        topUp,
+        topDown,
     };
 
     void setup();

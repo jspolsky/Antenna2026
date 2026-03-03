@@ -12,10 +12,39 @@ FlappyGame::FlappyGame()
     deactivate();
 }
 
+void FlappyGame::setLEDRange(uint8_t bottom, uint8_t top)
+{
+    // Validate minimum 30 LEDs and top within bounds
+    if (top >= NUM_LEDS)
+        top = NUM_LEDS - 1;
+    if (top - bottom + 1 < 30)
+        return; // Reject invalid range
+    bottomLED = bottom;
+    topLED = top;
+}
+
+int FlappyGame::gapMinY() const
+{
+    int vh = virtualHeight();
+    int minY = FLAPPY_GROUND_HEIGHT + FLAPPY_GAP_SIZE / 2 + 4;
+    if (minY >= vh)
+        minY = vh / 2;
+    return minY;
+}
+
+int FlappyGame::gapMaxY() const
+{
+    int vh = virtualHeight();
+    int maxY = vh - FLAPPY_GAP_SIZE / 2 - 4;
+    if (maxY <= gapMinY())
+        maxY = vh / 2;
+    return maxY;
+}
+
 void FlappyGame::deactivate()
 {
     gameState = STATE_INACTIVE;
-    birdY = FLAPPY_VIRTUAL_HEIGHT / 2;
+    birdY = virtualHeight() / 2;
     birdVelocity = 0;
     score = 0;
     scrollX = FLAPPY_VIRTUAL_WIDTH; // Start score off-screen right
@@ -24,7 +53,7 @@ void FlappyGame::deactivate()
     for (int i = 0; i < 3; i++)
     {
         pipeX[i] = -100;
-        pipeGapY[i] = FLAPPY_VIRTUAL_HEIGHT / 2;
+        pipeGapY[i] = virtualHeight() / 2;
     }
 
     pipe1Scored = pipe2Scored = pipe3Scored = false;
@@ -43,7 +72,7 @@ void FlappyGame::start()
 
 void FlappyGame::resetGame()
 {
-    birdY = FLAPPY_VIRTUAL_HEIGHT / 2;
+    birdY = virtualHeight() / 2;
     birdVelocity = 0;
     score = 0;
     scrollX = FLAPPY_VIRTUAL_WIDTH;
@@ -52,7 +81,7 @@ void FlappyGame::resetGame()
     for (int i = 0; i < 3; i++)
     {
         pipeX[i] = -100;
-        pipeGapY[i] = FLAPPY_VIRTUAL_HEIGHT / 2;
+        pipeGapY[i] = virtualHeight() / 2;
     }
 
     pipe1Scored = pipe2Scored = pipe3Scored = false;
@@ -153,7 +182,7 @@ void FlappyGame::updateReady()
     // Bird bobs up and down gently
     float bobOffset = FLAPPY_READY_BOB_AMPLITUDE *
                       sinf(2.0f * 3.14159f * readyFrames / FLAPPY_READY_BOB_PERIOD);
-    birdY = (FLAPPY_VIRTUAL_HEIGHT / 2) + bobOffset;
+    birdY = (virtualHeight() / 2) + bobOffset;
 }
 
 void FlappyGame::updateDying()
@@ -217,9 +246,9 @@ void FlappyGame::updateBird()
     {
         birdY = 0;
     }
-    if (birdY > FLAPPY_VIRTUAL_HEIGHT - 1)
+    if (birdY > virtualHeight() - 1)
     {
-        birdY = FLAPPY_VIRTUAL_HEIGHT - 1;
+        birdY = virtualHeight() - 1;
     }
 }
 
@@ -227,8 +256,12 @@ void FlappyGame::spawnPipe(int pipeIndex)
 {
     pipeX[pipeIndex] = FLAPPY_PIPE_SPAWN_X;
     // Random gap position between min and max
-    pipeGapY[pipeIndex] = FLAPPY_GAP_MIN_Y +
-                          (rand() % (FLAPPY_GAP_MAX_Y - FLAPPY_GAP_MIN_Y));
+    int minY = gapMinY();
+    int maxY = gapMaxY();
+    if (maxY > minY)
+        pipeGapY[pipeIndex] = minY + (rand() % (maxY - minY));
+    else
+        pipeGapY[pipeIndex] = virtualHeight() / 2;
 
     // Reset scored flag for this pipe
     switch (pipeIndex)
@@ -323,7 +356,7 @@ bool FlappyGame::checkCollision() const
     }
 
     // Ceiling collision
-    if (birdTop >= FLAPPY_VIRTUAL_HEIGHT)
+    if (birdTop >= virtualHeight())
     {
         return true;
     }

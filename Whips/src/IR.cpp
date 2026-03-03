@@ -62,6 +62,18 @@ namespace IR
                 case 0xB:
                     return flash;
 
+                case 0x14:
+                    return bottomUp;
+
+                case 0x10:
+                    return bottomDown;
+
+                case 0x16:
+                    return topUp;
+
+                case 0x12:
+                    return topDown;
+
                 default:
                     break;
                 }

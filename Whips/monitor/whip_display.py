@@ -66,7 +66,9 @@ class FlappyRenderer:
             #     int16_t pipe1X, uint16_t pipe1GapY,
             #     int16_t pipe2X, uint16_t pipe2GapY,
             #     int16_t pipe3X, uint16_t pipe3GapY,
-            #     int16_t scrollX, uint8_t flashWhip, uint8_t* rgbBuffer
+            #     int16_t scrollX, uint8_t flashWhip,
+            #     uint8_t bottomLED, uint8_t topLED,
+            #     uint8_t* rgbBuffer
             # );
             self._lib.renderFlappyState.argtypes = [
                 ctypes.c_uint8,   # gameState
@@ -80,6 +82,8 @@ class FlappyRenderer:
                 ctypes.c_uint16,  # pipe3GapY
                 ctypes.c_int16,   # scrollX
                 ctypes.c_uint8,   # flashWhip
+                ctypes.c_uint8,   # bottomLED
+                ctypes.c_uint8,   # topLED
                 ctypes.POINTER(ctypes.c_uint8)  # rgbBuffer
             ]
             self._lib.renderFlappyState.restype = None
@@ -95,7 +99,8 @@ class FlappyRenderer:
 
     def render(self, game_state, bird_y, score,
                pipe1_x, pipe1_gap_y, pipe2_x, pipe2_gap_y,
-               pipe3_x, pipe3_gap_y, scroll_x, flash_whip=255):
+               pipe3_x, pipe3_gap_y, scroll_x, flash_whip=255,
+               bottom_led=0, top_led=109):
         """Render the game state and return the RGB buffer as nested lists."""
         if self._lib is None:
             return None
@@ -113,6 +118,8 @@ class FlappyRenderer:
             ctypes.c_uint16(pipe3_gap_y),
             ctypes.c_int16(scroll_x),
             ctypes.c_uint8(flash_whip),
+            ctypes.c_uint8(bottom_led),
+            ctypes.c_uint8(top_led),
             self._buffer
         )
 
@@ -217,6 +224,9 @@ def main():
     # Per-pixel colors for each whip: whip_pixels[whip][led] = (r, g, b)
     whip_pixels = [[(0, 0, 0) for _ in range(LEDS_PER_WHIP)] for _ in range(NUM_WHIPS)]
     whip_brightness = [255] * NUM_WHIPS  # Start at full brightness
+    bottom_led = 0
+    top_led = LEDS_PER_WHIP - 1
+    range_flashing = False
     gif_cache = GifCache()
     flappy_renderer = FlappyRenderer()
     running = True
@@ -278,6 +288,11 @@ def main():
                             for led in range(LEDS_PER_WHIP):
                                 whip_pixels[whip][led] = frame_data[whip][led]
 
+                elif cmd.get('type') == 'set_game_range':
+                    bottom_led = cmd['bottom_led']
+                    top_led = cmd['top_led']
+                    range_flashing = cmd.get('flash_range', 0) > 0
+
                 elif cmd.get('type') == 'flappy_state':
                     if flappy_renderer.is_available():
                         frame_data = flappy_renderer.render(
@@ -291,7 +306,9 @@ def main():
                             cmd['pipe3_x'],
                             cmd['pipe3_gap_y'],
                             cmd['scroll_x'],
-                            cmd.get('flash_whip', 255)
+                            cmd.get('flash_whip', 255),
+                            bottom_led,
+                            top_led
                         )
                         if frame_data:
                             for w in range(NUM_WHIPS):
@@ -303,6 +320,12 @@ def main():
             except Exception as e:
                 print(f"Error processing command: {e}")
                 break
+
+        # Overlay boundary LEDs if range flash is active
+        if range_flashing:
+            for w in range(NUM_WHIPS):
+                whip_pixels[w][bottom_led] = (255, 255, 255)
+                whip_pixels[w][top_led] = (255, 255, 255)
 
         # Draw the display
         screen.fill((0, 0, 0))  # Black background

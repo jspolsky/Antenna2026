@@ -68,18 +68,17 @@ static inline bool isGroundPixel(int vy)
 }
 
 // Helper: check if virtual pixel is part of score digit during gameover scroll
-static inline bool isScorePixel(int vx, int vy, uint16_t score, int16_t scrollX)
+static inline bool isScorePixel(int vx, int vy, uint16_t score, int16_t scrollX, int virtualHeight)
 {
-    // Score digits scaled to be 3/4 of screen height
+    // Score digits scaled to be 3/4 of virtual height
     // Font is 5x7 pixels
-    // Y scale: 47 -> 329 virtual pixels tall (~82 physical LEDs, 3/4 of screen)
-    // X scale: 2.5 -> ~12 virtual pixels wide (~3 physical pixels)
     const int SCALE_X = 3;
-    const int SCALE_Y = 47;
-    const int digitWidth = FONT_WIDTH * SCALE_X;                  // 10 virtual pixels
-    const int digitHeight = FONT_HEIGHT * SCALE_Y;                // 329 virtual pixels
-    const int digitSpacing = digitWidth / 2;                      // 5 virtual pixels (half-space between digits)
-    const int scoreY = (FLAPPY_VIRTUAL_HEIGHT - digitHeight) / 2; // Center vertically
+    int SCALE_Y = (virtualHeight * 3) / (4 * FONT_HEIGHT);
+    if (SCALE_Y < 1) SCALE_Y = 1;
+    const int digitWidth = FONT_WIDTH * SCALE_X;
+    const int digitHeight = FONT_HEIGHT * SCALE_Y;
+    const int digitSpacing = digitWidth / 2;
+    const int scoreY = (virtualHeight - digitHeight) / 2; // Center vertically
 
     // Convert score to digits
     int digits[5];
@@ -147,6 +146,7 @@ static void getVirtualPixelColor(
     int16_t pipe2X, uint16_t pipe2GapY,
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
+    int virtualHeight,
     uint8_t *r, uint8_t *g, uint8_t *b)
 {
     // Default: sky (black)
@@ -166,7 +166,7 @@ static void getVirtualPixelColor(
     // Game over: show scrolling score
     if (gameState == FLAPPY_STATE_GAMEOVER)
     {
-        if (isScorePixel(vx, vy, score, scrollX))
+        if (isScorePixel(vx, vy, score, scrollX, virtualHeight))
         {
             *r = 255;
             *g = 255;
@@ -207,17 +207,30 @@ void renderFlappyColumn(
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
     uint8_t flashWhip,
+    uint8_t bottomLED,
+    uint8_t topLED,
     uint8_t *rgbBuffer)
 {
+    int vh = (topLED - bottomLED + 1) * FLAPPY_SCALE;
+
     // Check if this whip should flash white
     if (whipIndex == flashWhip)
     {
         for (int led = 0; led < FLAPPY_PHYSICAL_HEIGHT; led++)
         {
             int idx = led * 3;
-            rgbBuffer[idx + 0] = 255;
-            rgbBuffer[idx + 1] = 255;
-            rgbBuffer[idx + 2] = 255;
+            if (led >= bottomLED && led <= topLED)
+            {
+                rgbBuffer[idx + 0] = 255;
+                rgbBuffer[idx + 1] = 255;
+                rgbBuffer[idx + 2] = 255;
+            }
+            else
+            {
+                rgbBuffer[idx + 0] = 0;
+                rgbBuffer[idx + 1] = 0;
+                rgbBuffer[idx + 2] = 0;
+            }
         }
         return;
     }
@@ -228,8 +241,19 @@ void renderFlappyColumn(
     // For each physical LED in this column
     for (int led = 0; led < FLAPPY_PHYSICAL_HEIGHT; led++)
     {
-        // This LED covers virtual rows [led*4, led*4 + 3]
-        int vyStart = led * FLAPPY_SCALE;
+        int idx = led * 3;
+
+        // LEDs outside visible range are black
+        if (led < bottomLED || led > topLED)
+        {
+            rgbBuffer[idx + 0] = 0;
+            rgbBuffer[idx + 1] = 0;
+            rgbBuffer[idx + 2] = 0;
+            continue;
+        }
+
+        // Map LED position relative to bottomLED into virtual coordinates
+        int vyStart = (led - bottomLED) * FLAPPY_SCALE;
 
         // Accumulate color from all 16 virtual pixels (4x4 block)
         int rSum = 0, gSum = 0, bSum = 0;
@@ -246,7 +270,7 @@ void renderFlappyColumn(
                                      pipe1X, pipe1GapY,
                                      pipe2X, pipe2GapY,
                                      pipe3X, pipe3GapY,
-                                     scrollX, &r, &g, &b);
+                                     scrollX, vh, &r, &g, &b);
                 rSum += r;
                 gSum += g;
                 bSum += b;
@@ -254,7 +278,6 @@ void renderFlappyColumn(
         }
 
         // Average the 16 samples
-        int idx = led * 3;
         rgbBuffer[idx + 0] = rSum / (FLAPPY_SCALE * FLAPPY_SCALE);
         rgbBuffer[idx + 1] = gSum / (FLAPPY_SCALE * FLAPPY_SCALE);
         rgbBuffer[idx + 2] = bSum / (FLAPPY_SCALE * FLAPPY_SCALE);
@@ -271,6 +294,8 @@ void renderFlappyState(
     int16_t pipe3X, uint16_t pipe3GapY,
     int16_t scrollX,
     uint8_t flashWhip,
+    uint8_t bottomLED,
+    uint8_t topLED,
     uint8_t *rgbBuffer)
 {
     for (int whip = 0; whip < FLAPPY_PHYSICAL_WIDTH; whip++)
@@ -282,6 +307,8 @@ void renderFlappyState(
             pipe3X, pipe3GapY,
             scrollX,
             flashWhip,
+            bottomLED,
+            topLED,
             &rgbBuffer[whip * FLAPPY_PHYSICAL_HEIGHT * 3]);
     }
 }

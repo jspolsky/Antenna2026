@@ -151,6 +151,20 @@ class Visualizer(DeviceMonitorFilterBase):
             })
             return ""  # Shown in visualizer window
 
+        elif command == 'r':  # Set game range
+            if len(params) >= 3:
+                bottom_led = ord(params[0])
+                top_led = ord(params[1])
+                flash_range = ord(params[2])
+                self._send_command({
+                    'type': 'set_game_range',
+                    'bottom_led': bottom_led,
+                    'top_led': top_led,
+                    'flash_range': flash_range
+                })
+                return ""  # Shown in visualizer window
+            return f"Visualize: Set Game Range (Whip: {whip_str}, incomplete data)"
+
         elif command == 'f':  # Flappy Bird game state
             if len(params) >= 20:
                 # Parse the cmdFlappyState structure

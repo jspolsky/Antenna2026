@@ -49,6 +49,16 @@ public:
     // Reset to inactive state (return to GIF mode)
     void deactivate();
 
+    // Set the visible LED range
+    void setLEDRange(uint8_t bottom, uint8_t top);
+
+    // Dynamic virtual height based on LED range (4 virtual pixels per LED)
+    int virtualHeight() const { return (topLED - bottomLED + 1) * 4; }
+
+    // Dynamic gap Y limits that ensure the gap fits within the virtual height
+    int gapMinY() const;
+    int gapMaxY() const;
+
     // Game states
     static const uint8_t STATE_INACTIVE = 255;  // GIF/attract mode
     static const uint8_t STATE_READY = 0;
@@ -94,6 +104,10 @@ private:
     // Collision flash effect
     uint8_t flashWhip = 255;    // Which whip to flash (255 = none)
     uint8_t flashFrames = 0;    // Frames remaining for flash
+
+    // Visible LED range
+    uint8_t bottomLED = 0;
+    uint8_t topLED = 109;
 };
 
 // Global game instance
