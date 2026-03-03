@@ -14,7 +14,7 @@ For 2026 we
 
 2026 TODO LIST:
 ===============
-- [ ] Test game rendering with actual whips
+- [x] Test game rendering with actual whips
 - [x] Replace 600W power supplies with 300W
     - [x] Test temperature inside power packs
     - [x] Install new mounting plates     

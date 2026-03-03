@@ -20,6 +20,7 @@ namespace Led
     uint8_t bottomLED = 0;
     uint8_t topLED = NUM_LEDS - 1;
     bool rangeFlashing = false;
+    unsigned long lastPacketTime = 0;
 
     // Overlay boundary LEDs white when range flash is active
     void applyRangeFlash()
@@ -52,6 +53,28 @@ namespace Led
         {
             digitalWriteFast(pinLEDRxIndicator, LOW);
         }
+
+        // Idle animation when no packets received for 2 seconds
+        if (millis() - lastPacketTime > 2000)
+        {
+            EVERY_N_MILLIS(20)
+            {
+                // Sine bounce: 5-pixel orange element, 3-second period
+                float t = millis() / 3000.0f * 2.0f * 3.14159f;
+                float center = (NUM_LEDS - 1) / 2.0f +
+                               ((NUM_LEDS - 1) / 2.0f - 2.0f) * sinf(t);
+                int centerLED = (int)(center + 0.5f);
+
+                for (int i = 0; i < NUM_LEDS; i++)
+                {
+                    if (i >= centerLED - 2 && i <= centerLED + 2)
+                        leds[i] = CRGB::DarkOrange;
+                    else
+                        leds[i] = CRGB::Black;
+                }
+                FastLED.show();
+            }
+        }
     }
 
     void onPacketReceived(const uint8_t *buffer, size_t size)
@@ -81,6 +104,8 @@ namespace Led
             // not a message for us
             return;
         }
+
+        lastPacketTime = millis();
 
         switch (punk->chCommand)
         {
