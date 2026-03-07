@@ -20,7 +20,7 @@ namespace Button
 
     void setup()
     {
-        pinMode(pinButton, INPUT_PULLUP);
+        pinMode(pinButton, INPUT); // require external resistor for pull-up
     }
 
     void loop()
