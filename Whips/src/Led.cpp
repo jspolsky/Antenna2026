@@ -194,8 +194,13 @@ namespace Led
         case 'r':
         {
             cmdSetGameRange *pRange = (cmdSetGameRange *)buffer;
-            bottomLED = pRange->bottomLED;
-            topLED = pRange->topLED;
+            bottomLED = min(pRange->bottomLED, (uint8_t)(NUM_LEDS - 1));
+            topLED = min(pRange->topLED, (uint8_t)(NUM_LEDS - 1));
+            if (bottomLED > topLED)
+            {
+                bottomLED = 0;
+                topLED = NUM_LEDS - 1;
+            }
             rangeFlashing = (pRange->flashRange > 0);
             break;
         }

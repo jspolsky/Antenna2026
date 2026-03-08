@@ -98,6 +98,8 @@ namespace Gif
 
     void GetFrame(uint32_t frame, CRGB *leds)
     {
+        if (cFrames == 0)
+            return;
         memcpy(leds, rgbFrames[frame % cFrames], NUM_LEDS * 3);
     }
 

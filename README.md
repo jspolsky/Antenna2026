@@ -14,6 +14,8 @@ For 2026 we
 
 2026 TODO LIST:
 ===============
+- [ ] Continue to study intermittent freezes
+        - [ ] Consider a watchdog https://github.com/TeensyUser/doc/wiki/The-Watchdog-timer
 - [x] Fix 50 foot cable issues (see below)
 - [x] Test game rendering with actual whips
 - [x] Replace 600W power supplies with 300W
